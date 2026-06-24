@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LET Review Quiz</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #f0f4f8;
+    color: #1a2535;
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d6a9f 100%);
+    color: white;
+    padding: 28px 24px 22px;
+    text-align: center;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+  }
+
+  header h1 {
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  header p {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-top: 6px;
+  }
+
+  .score-bar {
+    background: white;
+    border-bottom: 2px solid #d1dce8;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    flex-wrap: wrap;
+  }
+
+  .score-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .score-item span.badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  .badge-correct { background: #d4edda; color: #1a6b36; }
+  .badge-wrong   { background: #f8d7da; color: #842029; }
+  .badge-total   { background: #cfe2ff; color: #084298; }
+  .badge-pct     { background: #e8d5fb; color: #5a189a; }
+
+  .progress-wrap {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .progress-bar {
+    height: 8px;
+    background: #d1dce8;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2d6a9f, #4ca3e2);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+
+  .container {
+    max-width: 820px;
+    margin: 30px auto 0;
+    padding: 0 16px;
+  }
+
+  .section-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #2d6a9f;
+    margin: 32px 0 12px;
+    padding-left: 4px;
+    border-left: 3px solid #2d6a9f;
+    padding-left: 10px;
+  }
+
+  .question-card {
+    background: white;
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+    border: 1.5px solid #e2eaf2;
+    transition: box-shadow 0.2s;
+  }
+
+  .question-card:hover {
+    box-shadow: 0 3px 14px rgba(0,0,0,0.1);
+  }
+
+  .q-number {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6c8eae;
+    margin-bottom: 8px;
+  }
+
+  .q-text {
+    font-size: 0.98rem;
+    font-weight: 600;
+    line-height: 1.55;
+    margin-bottom: 16px;
+    color: #1a2535;
+  }
+
+  .options-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .option {
+    padding: 11px 16px;
+    border: 1.5px solid #cdd8e5;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    user-select: none;
+    background: #f8fafc;
+  }
+
+  .option:hover:not(.locked) {
+    border-color: #2d6a9f;
+    background: #eef5fc;
+    transform: translateX(2px);
+  }
+
+  .option.correct {
+    background: #d4f4df;
+    border-color: #27ae60;
+    color: #145a32;
+    font-weight: 600;
+  }
+
+  .option.wrong {
+    background: #fde8e8;
+    border-color: #e74c3c;
+    color: #7b241c;
+    font-weight: 600;
+  }
+
+  .option.locked {
+    cursor: default;
+  }
+
+  .option.locked:not(.correct):not(.wrong) {
+    opacity: 0.55;
+  }
+
+  .rationale {
+    display: none;
+    margin-top: 14px;
+    background: #f0f7ff;
+    border-left: 4px solid #2d6a9f;
+    border-radius: 0 8px 8px 0;
+    padding: 14px 16px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: #1a2535;
+  }
+
+  .rationale.show { display: block; }
+
+  .rationale strong {
+    display: block;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #2d6a9f;
+    margin-bottom: 6px;
+  }
+
+  .result-banner {
+    display: none;
+    max-width: 820px;
+    margin: 24px auto 0;
+    padding: 0 16px;
+  }
+
+  .result-banner.show { display: block; }
+
+  .result-inner {
+    background: linear-gradient(135deg, #1e3a5f, #2d6a9f);
+    color: white;
+    border-radius: 14px;
+    padding: 30px;
+    text-align: center;
+  }
+
+  .result-inner h2 { font-size: 1.4rem; margin-bottom: 8px; }
+  .result-inner p  { opacity: 0.85; font-size: 0.95rem; margin-bottom: 20px; }
+
+  .big-score {
+    font-size: 3rem;
+    font-weight: 800;
+    margin: 10px 0;
+  }
+
+  .reset-btn {
+    background: white;
+    color: #1e3a5f;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 28px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: opacity 0.2s;
+  }
+
+  .reset-btn:hover { opacity: 0.85; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📚 LET Review Quiz</h1>
+  <p>Double-click an option to select your answer</p>
+</header>
+
+<div class="score-bar" id="scoreBar">
+  <div class="score-item">✅ Correct: <span class="badge badge-correct" id="sc">0</span></div>
+  <div class="score-item">❌ Wrong: <span class="badge badge-wrong" id="sw">0</span></div>
+  <div class="score-item">📋 Answered: <span class="badge badge-total" id="sa">0</span></div>
+  <div class="score-item">🏆 Score: <span class="badge badge-pct" id="sp">0%</span></div>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+  </div>
+</div>
+
+<div class="container" id="quizContainer"></div>
+
+<div class="result-banner" id="resultBanner">
+  <div class="result-inner">
+    <h2>Quiz Complete! 🎉</h2>
+    <div class="big-score" id="finalScore"></div>
+    <p id="finalMsg"></p>
+    <button class="reset-btn" onclick="resetQuiz()">🔄 Try Again</button>
+  </div>
+</div>
+
+<script>
+const questions = [
+  // Page 1
+  {
+    q: 'What figure of speech is the following: "He is the black sheep of the family."',
+    opts: ['Metaphor','Alliteration','Simile','Hyperbole'],
+    ans: 0,
+    rationale: 'A metaphor directly equates two unlike things without using "like" or "as." Saying someone IS the "black sheep" compares a person to an outcast sheep directly — making it a metaphor. A simile would say "like a black sheep." Alliteration is repetition of consonant sounds. Hyperbole is an exaggeration.'
+  },
+  {
+    q: '"She is a vision of feminine pulchritude." This stands for the following EXCEPT:',
+    opts: ['Loveliness','Comeliness','Homeliness','Physical beauty'],
+    ans: 2,
+    rationale: 'Pulchritude means physical beauty or comeliness. Loveliness and physical beauty are synonyms of pulchritude. Homeliness means plain or unattractive appearance — the opposite of pulchritude — so it is the EXCEPT answer.'
+  },
+  {
+    q: 'If you forgot _____ textbook, you can use____, Mark.',
+    opts: ['Yours, ours','His, her','Your, mine','Our, hers'],
+    ans: 2,
+    rationale: '"Your" is the correct possessive adjective modifying "textbook" (your textbook). "Mine" is the correct independent possessive pronoun — it means "my textbook," so Mark can use mine. The sentence correctly uses "Your, mine."'
+  },
+  {
+    q: 'Whose philosophy advocates the use of reason in understanding the existence of God?',
+    opts: ['St. Benedict','St. Peter','St. John','St. Thomas Aquinas'],
+    ans: 3,
+    rationale: 'St. Thomas Aquinas (1225–1274) was the great scholastic philosopher who synthesized faith and reason. His "Five Ways" (Quinque Viae) are rational arguments for the existence of God. He believed reason and faith are complementary, not contradictory.'
+  },
+  {
+    q: 'Mrs. Karen Kim asks her fourth year high school son what course he would like to take. She is in little way applying:',
+    opts: ['Perennialism','Essentialism','Progressivism','Existentialism'],
+    ans: 3,
+    rationale: 'Existentialism in education emphasizes individual choice, freedom, and self-determination. By asking her son what HE wants to pursue, Mrs. Kim respects his freedom to define his own path — a hallmark of the existentialist educational philosophy.'
+  },
+  {
+    q: 'Which term refers to the unwritten curriculum which may exert a significant influence on a school\'s culture?',
+    opts: ['Intended Curriculum','Implemented Curriculum','Hidden Curriculum','Informal Curriculum'],
+    ans: 2,
+    rationale: 'The Hidden Curriculum refers to the unwritten, unofficial, and often unintended lessons, values, and norms that students learn in school — such as attitudes, behaviors, and social expectations — that are not part of the formal course content.'
+  },
+  {
+    q: 'Filipino citizens have the power to participate in the establishment or administration of government such as right to vote and be voted as an exercise of _______.',
+    opts: ['Political rights','Civil rights','Social rights','Economic rights'],
+    ans: 0,
+    rationale: 'Political rights are the rights that allow citizens to participate directly in the government — including the right to vote, the right to run for public office, and other forms of political participation. Civil rights protect individuals from discrimination; social rights relate to welfare; economic rights relate to work and property.'
+  },
+  {
+    q: 'The celebrated play of William Shakespeare about two ill-starred lovers who come from warring families.',
+    opts: ['Romeo and Juliet','Hamlet and Ophelia','Anthony and Cleopatra','Ana and the King'],
+    ans: 0,
+    rationale: 'Romeo and Juliet (1597) by Shakespeare is the classic tragedy about two young lovers from rival families (the Montagues and Capulets) in Verona, Italy. They are described as "star-crossed lovers" in the prologue, meaning fate worked against them.'
+  },
+  {
+    q: 'Which act replaced P.D. 1006 and established the Licensure Examination for Teachers (LET)?',
+    opts: ['R.A. No. 7731','R.A. No. 7687','R.A. No. 7168','R.A. No. 7836'],
+    ans: 3,
+    rationale: 'Republic Act No. 7836, known as the Philippine Teachers Professionalization Act of 1994, replaced Presidential Decree 1006. It established the Licensure Examination for Teachers (LET) and created the Board for Professional Teachers under the Professional Regulation Commission (PRC).'
+  },
+  // Page 2
+  {
+    q: 'He was the last Spanish Governor-General in the Philippines.',
+    opts: ['Diego de los Rios','Basilio Agustin','Miguel Lopez de Legazpi','Narciso Claveria'],
+    ans: 0,
+    rationale: 'Diego de los Rios was the last Spanish Governor-General of the Philippines. He surrendered his post after Spain\'s defeat in the Spanish-American War of 1898, which ended Spanish colonial rule in the Philippines.'
+  },
+  {
+    q: 'Who was the first editor of La Solidaridad, and an orator of the Reform Movement?',
+    opts: ['Juan Luna','Graciano Lopez Jaena','Jose Rizal','Marcelo H. Del Pilar'],
+    ans: 1,
+    rationale: 'Graciano Lopez Jaena founded and became the first editor of La Solidaridad on February 15, 1889, in Barcelona, Spain. He was known as a brilliant orator and one of the leaders of the Propaganda Movement advocating Filipino rights under Spanish rule.'
+  },
+  {
+    q: 'The authorities mandated the total ban ______ of harmful insecticides.',
+    opts: ['On the use','Of use','With use','To use'],
+    ans: 0,
+    rationale: 'The correct idiomatic expression is "ban ON the use." In English, the noun "ban" is collocated with the preposition "on" — e.g., "a ban on smoking," "a ban on the use of harmful substances." The other prepositions (of, with, to) are grammatically incorrect in this context.'
+  },
+  {
+    q: 'Who is the famous composer from Angono who is also a national artist?',
+    opts: ['Edilberto Tiempo','San Pedro','Cenizal','Cayabyab'],
+    ans: 1,
+    rationale: 'Lucio San Pedro (1913–2002) was born in Angono, Rizal, and was declared a National Artist for Music in 1991. He is known for compositions such as "Sa Ugoy ng Duyan" and other Filipino classical music pieces.'
+  },
+  {
+    q: 'Who accidentally discovered penicillin?',
+    opts: ['Robert Koch','Louis Pasteur','Alexander Fleming','Joseph Lister'],
+    ans: 2,
+    rationale: 'Alexander Fleming accidentally discovered penicillin in 1928 when he noticed that a mold (Penicillium notatum) had contaminated a petri dish of staphylococci bacteria and was killing them. This accidental observation led to the development of antibiotics that revolutionized medicine.'
+  },
+  {
+    q: 'Who was the founder and editor of the newspaper called "La Independencia"?',
+    opts: ['Emilio Jacinto','Apolinario Mabini','Graciano Lopez Jaena','Antonio Luna'],
+    ans: 3,
+    rationale: 'General Antonio Luna founded and edited La Independencia in 1898. It was the first daily newspaper during the Philippine Revolution and the First Philippine Republic, advocating for Philippine independence.'
+  },
+  {
+    q: 'He coined the term "survival of the fittest."',
+    opts: ['Karl Marx','August Comte','Herbert Spencer','Arnold Toynbee'],
+    ans: 2,
+    rationale: 'Herbert Spencer (1820–1903) coined the phrase "survival of the fittest" in his 1864 work Principles of Biology, after reading Charles Darwin\'s On the Origin of Species. Spencer applied evolutionary theory to human society, leading to the concept of Social Darwinism.'
+  },
+  {
+    q: 'One instance of taking away the life of another person without due process is ____.',
+    opts: ['Euthanasia','Mercy Killing','Salvaging','Assassination'],
+    ans: 2,
+    rationale: 'In Philippine context, "salvaging" is a euphemism for extrajudicial killing — the taking of a life without due process of law, typically by armed groups. Euthanasia and mercy killing involve consent or terminal illness. Assassination refers to the murder of a prominent figure for political motives.'
+  },
+  {
+    q: 'The alternative learning delivery system used throughout the century has the following characteristics EXCEPT they ___.',
+    opts: ['Are indigenous','Require linkage with various resources','Stick to traditional schooling','Are non-formal'],
+    ans: 2,
+    rationale: 'Alternative Learning Delivery Systems (ALDS) are characterized by being indigenous, requiring linkage with various resources, and being non-formal. They deliberately move AWAY from traditional schooling — so "stick to traditional schooling" is the EXCEPT answer.'
+  },
+  {
+    q: 'What is the predominant characteristic of eastern religion?',
+    opts: ['Optimism','Secularism','Mysticism','Pessimism'],
+    ans: 2,
+    rationale: 'Eastern religions (Hinduism, Buddhism, Taoism, etc.) are predominantly characterized by mysticism — a direct, personal experience of the divine or ultimate reality through meditation, contemplation, and spiritual practice. This is distinct from Western religions that tend to be more doctrinal and institutional.'
+  },
+  // Page 3
+  {
+    q: 'Scurvy is caused by the lack of __.',
+    opts: ['Vitamin B','Vitamin E','Vitamin C','Vitamin A'],
+    ans: 2,
+    rationale: 'Scurvy is caused by a deficiency of Vitamin C (ascorbic acid). Vitamin C is essential for collagen synthesis. Scurvy was historically common among sailors who lacked fresh fruits and vegetables. Symptoms include bleeding gums, weakness, and skin hemorrhages.'
+  },
+  {
+    q: 'The Filipino writer in English who used Hispanic Filipino culture and traditions in his fiction works.',
+    opts: ['Edilberto Tiempo','Nick Joaquin','Sionil Jose','Jose Garcia Villa'],
+    ans: 1,
+    rationale: 'Nick Joaquin (1917–2004), also known by his pen name Quijano de Manila, is celebrated for weaving Hispanic Filipino culture, traditions, and the colonial past into his literary works. He was declared a National Artist for Literature in 1976. His works include "The Woman Who Had Two Navels" and "Portrait of the Artist as Filipino."'
+  },
+  {
+    q: 'Can a failed examinee qualify for the position of para-teacher?',
+    opts: ['No','Yes','Yes, if his LET rating is below 75','Yes, if his LET rating is 70 and above'],
+    ans: 3,
+    rationale: 'Under RA 7836 and DECS/DepEd orders, a failed LET examinee may qualify as a para-teacher (temporary/provisional teacher) if their LET rating is 70% or above. This provision allows those close to the passing rate to serve in areas with teacher shortages while working toward passing the full LET.'
+  },
+  {
+    q: 'Transparency International rates the Philippines as one of the most corrupt nations in Asia. What educational program is relevant to this situation?',
+    opts: ['Values Education','Social-economic development','Cultural preservation program','Infrastructure modernization'],
+    ans: 0,
+    rationale: 'Values Education directly addresses the moral and ethical foundations of citizens. Corruption stems from poor values; thus, instilling integrity, honesty, and civic responsibility through Values Education is the most relevant educational response to combat corruption in the Philippines.'
+  },
+  {
+    q: 'Educated in a religious school, Dona goes to confession every day to be free of any mortal sin. How do you characterize Dona\'s moral attitude?',
+    opts: ['Pharisaical','Strict','Callous','Scrupulous'],
+    ans: 3,
+    rationale: 'Scrupulous (from Latin "scrupulus," a small sharp stone causing discomfort) describes someone with a very careful, thorough, attentive conscience — someone who examines every moral detail. Dona\'s daily confession to ensure she is free of even mortal sin shows a scrupulous conscience. Pharisaical implies hypocrisy; callous means insensitive.'
+  },
+  {
+    q: 'Which is a check on the executive department by the judiciary in the principle of check and balance among branches of government?',
+    opts: ['Impeachment of the Chief Justice of the Supreme Court','Determining the salary of the President and Vice-President','Declaring a legislative measure unconstitutional','Declaring an act of the President unconstitutional'],
+    ans: 3,
+    rationale: 'The judiciary checks the executive branch by declaring acts of the President unconstitutional (judicial review). This prevents the executive from abusing power. Note: Declaring a legislative measure unconstitutional is a check on the legislative branch. Impeachment is a legislative check on the judiciary.'
+  },
+  {
+    q: 'According to Nagel\'s acronym PPPF, what is important to follow up in the proper use of instructional materials?',
+    opts: ['Student interest','Student expectation','Objectives','Lesson Plan'],
+    ans: 2,
+    rationale: 'Nagel\'s PPPF stands for: Purpose, Preparation, Presentation, and Follow-up. The "F" (Follow-up) involves activities aligned with the lesson\'s OBJECTIVES to reinforce learning after the instructional material has been presented. Following up on objectives ensures the material achieved its intended learning outcomes.'
+  },
+  // Page 4
+  {
+    q: 'Which band played the Marcha Nacional Filipino of the national anthem on June 12, 1898 during the declaration of Philippine Independence?',
+    opts: ['Pangkat Kawayang Pateros','Kawit Cavite Band','Malabon Band','San Francisco del Monte Band'],
+    ans: 2,
+    rationale: 'The Malabon Band (also cited in some sources as the San Francisco del Monte Band — historical accounts vary) played the Philippine national anthem during the declaration of independence on June 12, 1898 in Kawit, Cavite. Most DepEd-adopted materials identify the Malabon Band.'
+  },
+  {
+    q: 'Tapos na ang klase kapag tumunog na ang __.',
+    opts: ['Agunyas','Batingting','Kampana','Kampanilya'],
+    ans: 3,
+    rationale: 'Sa paaralang konteksto, ang "kampanilya" (maliit na kampana o bell) ang ginagamit na hudyat na tapos na ang klase. Ang "kampana" ay mas mabigat at pangkaraniwan sa simbahan. Ang "batingting" ay hudyat ng pagdating ng klase. Ang "agunyas" ay kampanang pampuneralya.'
+  },
+  {
+    q: 'Why are door knobs placed at the edge of a door rather than in the center?',
+    opts: ['To increase the lever arm','To increase the force on the door','To help give more momentum to the door','Closer to the edge of the doorway'],
+    ans: 0,
+    rationale: 'This is an application of torque physics. Torque = Force × lever arm (distance from pivot). Placing the knob at the edge maximizes the distance from the hinge (pivot point), thereby maximizing the lever arm and making it easier to open the door with less force. Less force is needed when the lever arm is longer.'
+  },
+  {
+    q: 'Among the models of reading strategies, what did student Lina adopt when she read back and forth, attending to both what is in her mind and what\'s on the page?',
+    opts: ['Down-top','Interactive','Top-down','Bottom-up'],
+    ans: 1,
+    rationale: 'The Interactive model of reading integrates both top-down processing (using prior knowledge, context, and predictions) and bottom-up processing (decoding text from letters to words). Lina reads "back and forth" between her thoughts (top-down) and the text (bottom-up) — this is the Interactive reading model.'
+  },
+  {
+    q: 'When the Senate conducts inquiry and investigation in aid of legislation, which does it exercise?',
+    opts: ['General Legislative power','Specific Power','Implied power','Inherent Power'],
+    ans: 1,
+    rationale: 'The power to conduct inquiries in aid of legislation is a Specific Power explicitly granted to Congress under Article VI, Section 21 of the 1987 Philippine Constitution. It is a specific, enumerated power — not implied or inherent — that allows the Senate and House to gather information needed to craft laws.'
+  },
+  {
+    q: 'There is no Constitution that is entirely written or unwritten.',
+    opts: ['Statement is true and correct','Statement is correct','Statement is partially correct','There is no basis to conclude'],
+    ans: 0,
+    rationale: 'This statement is a well-established principle in constitutional law. Even written constitutions (like the Philippines\') contain unwritten conventions and customs. Conversely, unwritten constitutions (like the UK\'s) still have written elements (Magna Carta, statutes). Therefore, the statement is true and correct.'
+  },
+  {
+    q: 'A type of education which aims to develop the individual for maximum usefulness in the state is:',
+    opts: ['Humanism','Realism','Utilitarianism','Progressivism'],
+    ans: 2,
+    rationale: 'Utilitarianism in education focuses on developing individuals to be maximally useful to society and the state. Rooted in the philosophy of Jeremy Bentham and John Stuart Mill, it emphasizes "the greatest good for the greatest number" — making practical usefulness the chief goal of education.'
+  },
+  {
+    q: 'An object becomes positively charged if it ______.',
+    opts: ['Gains protons','Gains electrons','Loses protons','Loses electrons'],
+    ans: 3,
+    rationale: 'An object becomes positively charged when it LOSES electrons (negatively charged particles). Protons are fixed in the nucleus and cannot be easily added or removed. When an object has fewer electrons than protons, it has a net positive charge. This is the basis of static electricity.'
+  },
+  // Page 5
+  {
+    q: 'Which part of the lesson is involved in giving situations or activities based on the concepts learned?',
+    opts: ['Preparation','Generalization','Application','Comparison & abstraction'],
+    ans: 2,
+    rationale: 'The Application phase of a lesson plan involves giving students situations, activities, or problems where they apply the concepts and skills they have just learned. It moves learning from abstract understanding to practical use, reinforcing comprehension through practice.'
+  },
+  {
+    q: 'With whom is the "Strong Republic" associated?',
+    opts: ['Fidel V. Ramos','Joseph Estrada','Gloria Macapagal-Arroyo','Corazon Aquino'],
+    ans: 2,
+    rationale: 'The "Strong Republic" was the campaign slogan and governance vision of President Gloria Macapagal-Arroyo (GMA) during her administration (2001–2010). She used it to characterize her program of building a stronger, more competitive, and corruption-resistant Philippines.'
+  },
+  {
+    q: 'Students must be taught self-responsibility is the desire of the ______ teacher.',
+    opts: ['Existentialist','Utilitarianist','Pragmatic','Constructivist'],
+    ans: 0,
+    rationale: 'Existentialist education places supreme value on individual freedom, choice, and personal responsibility. An existentialist teacher believes the primary goal of education is to help students develop self-awareness and take full responsibility for their own choices and lives.'
+  },
+  {
+    q: 'She is a vision of feminine PULCHRITUDE. The capitalized word means ___.',
+    opts: ['Homeliness','Loveliness','Plain','Ugliness'],
+    ans: 1,
+    rationale: 'Pulchritude means physical beauty or comeliness. It comes from the Latin word "pulchritudo." Despite sounding harsh, it is a formal, literary word for beauty. "Loveliness" is its closest synonym.'
+  },
+  {
+    q: 'Shirley has not forgotten that she was betrayed by her best friend and carried such ___ in her deeply offended heart for a long time.',
+    opts: ['Rancor','Doubt','Souvenir','Offense'],
+    ans: 0,
+    rationale: 'Rancor means deep-seated bitterness, resentment, or ill will. It perfectly describes the lingering negative feeling Shirley carries after being betrayed. "Doubt" implies uncertainty; "souvenir" is a keepsake; "offense" is a less specific term than the deep resentment implied by rancor.'
+  },
+  {
+    q: 'Participation in governance, including the right to vote and seek public office is secured within the citizenry\'s _________________.',
+    opts: ['Right to due process','Socio-civic rights','Political rights','Right of suffrage'],
+    ans: 2,
+    rationale: 'Political rights encompass both the right to vote AND the right to seek public office (be voted upon). While the right of suffrage is the right to vote specifically, "political rights" is the broader category that includes both aspects mentioned in the question.'
+  },
+  {
+    q: 'Which of the following is an artistic tradition that seeks to revive past glory in various forms?',
+    opts: ['Antique','Modern','Contemporary','Classical'],
+    ans: 3,
+    rationale: 'Classicism is the artistic tradition that looks back to ancient Greek and Roman ideals of beauty, order, and harmony, seeking to revive their standards of excellence. Classical art emphasizes balance, proportion, and timeless aesthetic principles derived from antiquity.'
+  },
+  {
+    q: '"Because of PROFANITY the program was suspended from television." The capitalized word means?',
+    opts: ['Obscenity','History','Decency','Falsehood'],
+    ans: 0,
+    rationale: 'Profanity refers to obscene, vulgar, or blasphemous language or behavior — content considered disrespectful to religious or moral standards. It is a synonym for obscenity in this context. "Decency" is its antonym. Profanity is exactly why broadcast regulators suspend programs.'
+  },
+  {
+    q: 'A story put together through an exchange of letters is called __________ literature.',
+    opts: ['Fiction','Epistolary','Episodic','Classic'],
+    ans: 1,
+    rationale: 'Epistolary literature (from Latin "epistola," meaning letter) refers to novels or stories told through a series of documents — usually letters, diary entries, or in modern contexts, emails or text messages. Famous examples include "Pamela" by Samuel Richardson and "Frankenstein" by Mary Shelley.'
+  },
+  // Page 6
+  {
+    q: 'Nelson Mandela gave up armed struggle and chose the peaceful way to freedom. Nelson Mandela is a world leader who is a model of ________________.',
+    opts: ['Black supremacy','Armed struggle','Non-violence','Imprisonment'],
+    ans: 2,
+    rationale: 'Nelson Mandela, despite being imprisoned for 27 years, ultimately chose negotiation and reconciliation over armed conflict to end apartheid in South Africa. He became an international symbol of peaceful resistance, forgiveness, and non-violence — ideals he shared with leaders like Gandhi and Martin Luther King Jr.'
+  },
+  {
+    q: 'Which of the following gives the numerical value of the population?',
+    opts: ['Range','Statistics','Parameter','Variable'],
+    ans: 2,
+    rationale: 'A parameter is a numerical value that describes a characteristic of a POPULATION (the entire group). Statistics, on the other hand, describe samples. Range is a measure of spread; variable is a characteristic being measured. When you have data for an entire population, you compute parameters (like population mean μ or population standard deviation σ).'
+  },
+  {
+    q: 'Mrs. Alvaro is doing an assessment OF learning. At what stage of instruction should she do it?',
+    opts: ['Before instruction','Prior instruction','After instruction','During the instruction process'],
+    ans: 2,
+    rationale: 'Assessment OF learning (summative assessment) is conducted AFTER instruction to evaluate what students have learned and to assign grades or certifications. This differs from assessment FOR learning (formative — during instruction) and assessment AS learning (self-assessment).'
+  },
+  {
+    q: 'What was the power to set aside granted by the Kingdom of Spain to the Governor-General of the Philippines?',
+    opts: ['Veto power / Conditioned Power','Condign Power / Compensatory power','',''],
+    opts: ['Veto power','Condign Power','Conditioned Power','Compensatory power'],
+    ans: 0,
+    rationale: 'The Governor-General of the Philippines was granted veto power by the Kingdom of Spain, allowing him to set aside or override certain laws and orders. This was one of the extensive powers that made the Governor-General one of the most powerful colonial administrators in the world.'
+  },
+  {
+    q: 'What best describes the form of government of England with its parliament, a prime minister, and a queen (or king)?',
+    opts: ['Constitutional monarchy','Anarchism','Ethnocracy','Demarchy'],
+    ans: 0,
+    rationale: 'England (UK) operates as a Constitutional Monarchy — a system where a hereditary monarch serves as head of state but governmental powers are exercised by elected representatives (Parliament) and a Prime Minister. The monarch\'s powers are limited by the constitution and convention.'
+  },
+  {
+    q: 'Damage to DNA that is not repaired and then replicated can result in genetic disorders.',
+    opts: ['Mutation','Pathology','Embryology','Speciation'],
+    ans: 0,
+    rationale: 'When DNA is damaged and the damage is not corrected before replication, the error is copied into daughter cells — resulting in a mutation. Mutations are permanent changes in the DNA sequence. If they occur in germ cells, they can be inherited; in somatic cells, they can lead to cancer or other disorders.'
+  },
+  {
+    q: 'What organism would most likely be in an arctic environment?',
+    opts: ['Crocodile','Walrus','Turtle','Maya Bird'],
+    ans: 1,
+    rationale: 'Walruses are well-adapted to arctic environments — they have thick blubber for insulation, can survive freezing temperatures, and live in Arctic and subarctic regions. Crocodiles, turtles, and tropical birds require warm climates and cannot survive in arctic conditions.'
+  },
+  {
+    q: 'The contents of various learning areas in the Senior High School are based on what standards?',
+    opts: ['Moving-Up Standards','College Readiness Standards','Employment Readiness Standards','Higher Education Standards'],
+    ans: 1,
+    rationale: 'Under the K to 12 curriculum in the Philippines, Senior High School (Grades 11–12) content standards are based on College and Livelihood Readiness Standards. The core subjects aim to prepare students for higher education (college readiness), which aligns with the answer "College Readiness Standards."'
+  },
+  // Page 7
+  {
+    q: 'Ang simbolong kumakatawan sa mga bagay at mga pangungusap nais ipahayag ng tao sa kanyang kapwa ay ___________.',
+    opts: ['Wika','Sining','Bokabolaryo','Tunog'],
+    ans: 0,
+    rationale: 'Ang wika ay ang sistematikong koleksyon ng mga simbolo (salita, tunog, kilos) na ginagamit ng tao upang maipahayag ang kanilang mga iniisip, damdamin, at ideya sa isa\'t isa. Ito ang pangunahing instrumento ng komunikasyon ng tao.'
+  },
+  {
+    q: 'Ang mga salitang teka, saan, tena, dali ay nagtataglay ng',
+    opts: ['Asimilasyon','Metatesis','Tono','Pagkaltas'],
+    ans: 3,
+    rationale: 'Ang pagkaltas ay ang proseso ng pagkawala ng isa o higit pang tunog o pantig sa isang salita. Halimbawa: "teka" (mula sa "hintay ka"), "saan" (mula sa "saan ka"), "tena" (mula sa "tayo na") — pawang nagtataglay ng pagkaltas ng ilang tunog o pantig.'
+  },
+  {
+    q: 'Progressivism considers the nature of the child. Which philosophy does NOT adhere to this?',
+    opts: ['Pragmatism','Essentialism','Humanism','Naturalism'],
+    ans: 1,
+    rationale: 'Essentialism focuses on teaching a core body of essential knowledge and skills, emphasizing academic rigor and teacher-directed instruction. It does not center on the nature or interests of the child. Progressivism, pragmatism, humanism, and naturalism all emphasize child-centered approaches.'
+  },
+  {
+    q: 'Behaviorism is a philosophy that has been anchored on the theories that relate to____.',
+    opts: ['I and II (Trial and error + Stimulus and response)','I, II and III','I only (Trial and error)','II only (Stimulus and response)'],
+    ans: 3,
+    rationale: 'Behaviorism is primarily anchored on Stimulus-Response (S-R) theory, associated with Pavlov\'s classical conditioning and Skinner\'s operant conditioning. While trial and error (Thorndike) has behaviorist elements, the core defining feature of behaviorism is the stimulus-response relationship. Brain/thinking (III) belongs to cognitivism, not behaviorism.'
+  },
+  {
+    q: 'Teachers in school perform the role of parents (loco parentis). Which philosophy espouses this view of education?',
+    opts: ['Pragmatism','Naturalism','Idealism','Realism'],
+    ans: 1,
+    rationale: 'Naturalism in education, particularly as advocated by Jean-Jacques Rousseau, views the home as the primary educational institution. Under this philosophy, the school and teacher act as extensions of the home — serving as surrogate parents (loco parentis) to nurture the natural development of the child.'
+  },
+  {
+    q: 'Ito ay ang pag-aaral ng makabuluhang tunog ng isang wika.',
+    opts: ['Ponolohiya','Morpolohiya','Sintaks','Palabuuan'],
+    ans: 0,
+    rationale: 'Ang ponolohiya (phonology) ay ang sangay ng linggwistika na nag-aaral ng mga ponema o makabuluhang tunog ng isang wika — kung paano ang mga tunog ay nagkakaibahan ang kahulugan. Ang morpolohiya ay pag-aaral ng mga salita; sintaks ay ng mga pangungusap; palabuuan ay ng mga ponema at ponolohiya rin ngunit kadalasang tinutukoy ang sistema ng tunog.'
+  },
+  {
+    q: 'Which of the following contributes to the provision of quality education?',
+    opts: ['Construct classroom and laboratory rooms','Hire the best teacher applicants from the Division pool','Provide adequate textbooks and other instructional materials','Maintain sanitary, safe, child-friendly and conducive environment to learning'],
+    ans: 3,
+    rationale: 'While all options contribute to education quality, maintaining a sanitary, safe, child-friendly and conducive environment is the most HOLISTIC contributor. Research consistently shows that a safe and supportive learning environment is the foundational condition for all other quality factors (teachers, materials, facilities) to be effective.'
+  },
+  // Page 8
+  {
+    q: 'The Filipinos are deeply religious; however, sometimes this religiosity instills the NEGATIVE attitude of ___________________.',
+    opts: ['Social responsibility to participate in the development of the society','Resignation and ends up into doing nothing to improve one\'s condition','Total surrender to God in times of helplessness is best','God who is omnipotent and omniscient will allow what is best'],
+    ans: 1,
+    rationale: 'The negative attitude referred to is "bahala na" — a fatalistic resignation where Filipinos leave everything to God/fate without taking personal initiative. While faith is positive, extreme religious fatalism can lead to passivity and inaction in the face of problems, which is the negative consequence identified here.'
+  },
+  {
+    q: 'Which of the following statements is true about a textbook laid on the table?',
+    opts: ['No force is acting on it','The textbook undergoes acceleration','The sum of the forces acting upon it is zero','The textbook undergoes deceleration'],
+    ans: 2,
+    rationale: 'By Newton\'s First Law and the concept of equilibrium, a stationary object on a table has balanced forces — gravity pulls it down while the table\'s normal force pushes it up. These forces cancel each other out, making the NET or SUM of forces equal to zero. The book is in static equilibrium.'
+  },
+  {
+    q: '"Women should not study since they will be marrying soon." Can we consider this premise morally right?',
+    opts: ['Depends on the family social status','Yes, women are meant for the home','No, women can perform just like men','No, there is gender equality in education'],
+    ans: 3,
+    rationale: 'The premise is morally wrong because it violates the principle of gender equality in education. In the Philippines, RA 9710 (Magna Carta of Women) and international human rights standards guarantee equal access to education regardless of gender. Denying education based on gender is discriminatory and unconstitutional.'
+  },
+  {
+    q: 'A philosophy that believes in prior learning or what the learners already know is _____.',
+    opts: ['Pragmatism','Idealism','Essentialism','Realism'],
+    ans: 2,
+    rationale: 'Essentialism in education emphasizes building on what students already know — prior knowledge — and teaching essential, time-tested knowledge and skills. William Bagley, a key essentialist, stressed the importance of mastering prerequisite knowledge before advancing. Note: While constructivism (Vygotsky, Piaget) is most associated with prior knowledge in modern terms, among the choices given, Essentialism best fits.'
+  }
+];
+
+let correct = 0, wrong = 0, answered = 0;
+const total = questions.length;
+
+// Audio context for sound effects
+function playCorrect() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = 'sine';
+    o.frequency.setValueAtTime(523, ctx.currentTime);
+    o.frequency.setValueAtTime(659, ctx.currentTime + 0.1);
+    o.frequency.setValueAtTime(784, ctx.currentTime + 0.2);
+    g.gain.setValueAtTime(0.3, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    o.start(); o.stop(ctx.currentTime + 0.5);
+  } catch(e) {}
+}
+
+function playWrong() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(300, ctx.currentTime);
+    o.frequency.setValueAtTime(200, ctx.currentTime + 0.15);
+    g.gain.setValueAtTime(0.2, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    o.start(); o.stop(ctx.currentTime + 0.4);
+  } catch(e) {}
+}
+
+function updateScore() {
+  document.getElementById('sc').textContent = correct;
+  document.getElementById('sw').textContent = wrong;
+  document.getElementById('sa').textContent = answered;
+  const pct = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+  document.getElementById('sp').textContent = pct + '%';
+  document.getElementById('pf').style.width = Math.round((answered / total) * 100) + '%';
+
+  if (answered === total) showResult();
+}
+
+function showResult() {
+  const banner = document.getElementById('resultBanner');
+  const pct = Math.round((correct / total) * 100);
+  document.getElementById('finalScore').textContent = correct + ' / ' + total + ' (' + pct + '%)';
+  let msg = '';
+  if (pct >= 90) msg = '🌟 Outstanding! You are exam-ready!';
+  else if (pct >= 75) msg = '👏 Great job! You passed the standard threshold!';
+  else if (pct >= 60) msg = '📖 Good effort! Review the marked items and try again.';
+  else msg = '💪 Keep practicing! Every attempt makes you stronger.';
+  document.getElementById('finalMsg').textContent = msg;
+  banner.classList.add('show');
+  banner.scrollIntoView({ behavior: 'smooth' });
+}
+
+function buildQuiz() {
+  const container = document.getElementById('quizContainer');
+  container.innerHTML = '';
+
+  const sections = [
+    { label: 'Section A — Language & Literature', range: [0, 8] },
+    { label: 'Section B — History & Culture', range: [9, 18] },
+    { label: 'Section C — Education & Philosophy', range: [19, 27] },
+    { label: 'Section D — Governance, Science & Mixed', range: [28, 42] },
+    { label: 'Section E — Filipino Language & Values', range: [43, 51] },
+  ];
+
+  let qIndex = 0;
+  questions.forEach((q, i) => {
+    // Section label
+    sections.forEach(s => {
+      if (i === s.range[0]) {
+        const lbl = document.createElement('div');
+        lbl.className = 'section-label';
+        lbl.textContent = s.label;
+        container.appendChild(lbl);
+      }
+    });
+
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.id = 'card-' + i;
+
+    const num = document.createElement('div');
+    num.className = 'q-number';
+    num.textContent = 'Question ' + (i + 1) + ' of ' + total;
+
+    const qText = document.createElement('div');
+    qText.className = 'q-text';
+    qText.textContent = q.q;
+
+    const list = document.createElement('ul');
+    list.className = 'options-list';
+
+    const letters = ['A','B','C','D'];
+    q.opts.forEach((opt, oi) => {
+      if (!opt) return; // skip empty
+      const li = document.createElement('li');
+      li.className = 'option';
+      li.textContent = letters[oi] + '. ' + opt;
+      li.dataset.index = oi;
+
+      li.addEventListener('dblclick', () => {
+        if (card.dataset.answered) return;
+        card.dataset.answered = '1';
+        answered++;
+
+        const isCorrect = (oi === q.ans);
+        if (isCorrect) { correct++; playCorrect(); }
+        else { wrong++; playWrong(); }
+
+        // Lock all options
+        list.querySelectorAll('.option').forEach(el => {
+          el.classList.add('locked');
+          const idx = parseInt(el.dataset.index);
+          if (idx === q.ans) el.classList.add('correct');
+          else if (idx === oi && !isCorrect) el.classList.add('wrong');
+        });
+
+        rationale.classList.add('show');
+        updateScore();
+      });
+
+      list.appendChild(li);
+    });
+
+    const rationale = document.createElement('div');
+    rationale.className = 'rationale';
+    rationale.innerHTML = '<strong>📘 Explanation</strong>' + q.rationale;
+
+    card.appendChild(num);
+    card.appendChild(qText);
+    card.appendChild(list);
+    card.appendChild(rationale);
+    container.appendChild(card);
+  });
+}
+
+function resetQuiz() {
+  correct = 0; wrong = 0; answered = 0;
+  document.getElementById('resultBanner').classList.remove('show');
+  updateScore();
+  buildQuiz();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+buildQuiz();
+updateScore();
+</script>
+</body>
+</html>
